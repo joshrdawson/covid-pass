@@ -35,6 +35,11 @@ contract Passport {
         emit VerifiedUser(_address);
     }
 
+    function removeVerifiedUser(address _address) public verified {
+        verifiedUsers[_address] = false;
+        emit UnverifiedUser(_address);
+    }
+
     function topUp(address payable _address) public payable admin {
         if (isVerified(_address)) {
             _address.transfer(msg.value);
@@ -67,6 +72,7 @@ contract Passport {
 
     event Transfer(address indexed _address, uint256 _amount);
     event VerifiedUser(address indexed _address);
+    event UnverifiedUser(address indexed _address);
     event PositiveCase(
         string _countryCode,
         string _subdivisionCode,
