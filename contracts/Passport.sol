@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.7.4;
 
 contract Passport {
@@ -15,7 +16,7 @@ contract Passport {
         bool immunityStatus; // bool representing immunity status of citizen (true = immune)
     }
 
-    constructor() public {
+    constructor() {
         owner = msg.sender;
         verifiedUsers[msg.sender] = true;
     }
