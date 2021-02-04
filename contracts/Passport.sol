@@ -2,15 +2,17 @@ pragma solidity ^0.7.4;
 
 contract Passport {
     address public owner;
-    mapping(address => bool) public verifiedUsers;
+    mapping(address => bool) verifiedUsers;
 
     mapping(uint256 => Citizen) public passport;
     uint256 passportCount = 0;
 
     struct Citizen {
-        uint256 id;
-        string name;
-        bool status;
+        uint256 id; // temporary uint id for testing
+        string countryCode; // store country code of citizen (eg GB-ENG = England)
+        string subdivisionCode; // store county code of citizen eg (GB-NBL = Northumberland)
+        uint16 age;
+        bool immunityStatus; // bool representing immunity status of citizen (true = immune)
     }
 
     constructor() public {
@@ -44,15 +46,30 @@ contract Passport {
         return verifiedUsers[_address];
     }
 
-    function addCitizen(string memory _name, bool _status) public verified {
+    function addCitizen(
+        string memory _countryCode,
+        string memory _subdivisionCode,
+        uint16 _age,
+        bool _immunityStatus
+    ) public verified {
         passportCount++;
-        passport[passportCount] = Citizen(passportCount, _name, _status);
-        if (_status) {
-            emit PositiveCase(_name);
+        passport[passportCount] = Citizen(
+            passportCount,
+            _countryCode,
+            _subdivisionCode,
+            _age,
+            _immunityStatus
+        );
+        if (_immunityStatus) {
+            emit PositiveCase(_countryCode, _subdivisionCode, _age);
         }
     }
 
     event Transfer(address indexed _address, uint256 _amount);
     event VerifiedUser(address indexed _address);
-    event PositiveCase(string _name);
+    event PositiveCase(
+        string _countryCode,
+        string _subdivisionCode,
+        uint16 _age
+    );
 }
