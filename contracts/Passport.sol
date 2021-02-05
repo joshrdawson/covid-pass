@@ -2,27 +2,23 @@
 pragma solidity ^0.7.4;
 
 contract Passport {
-    address owner;
-    mapping(address => bool) verifiedUsers;
-
-    mapping(uint256 => Citizen) public passport;
-    uint256 passportCount = 0;
+    address administrator; // address of who deployed the contract (admin access for certain operations)
+    mapping(address => bool) verifiedUsers; // mapping of verified users
+    mapping(bytes32 => Citizen) public passport; // map hashes to citizens
 
     struct Citizen {
-        uint256 id; // temporary uint id for testing
-        string countryCode; // store country code of citizen (eg GB-ENG = England)
         string subdivisionCode; // store county code of citizen eg (GB-NBL = Northumberland)
         uint8 age;
         bool immunityStatus; // bool representing immunity status of citizen (true = immune)
     }
 
     constructor() {
-        owner = msg.sender;
+        administrator = msg.sender;
         verifiedUsers[msg.sender] = true;
     }
 
     modifier admin() {
-        require(msg.sender == owner);
+        require(msg.sender == administrator);
         _;
     }
 
@@ -36,7 +32,7 @@ contract Passport {
         emit VerifiedUser(_address);
     }
 
-    function removeVerifiedUser(address _address) public verified {
+    function removeVerifiedUser(address _address) public admin {
         verifiedUsers[_address] = false;
         emit UnverifiedUser(_address);
     }
@@ -53,30 +49,23 @@ contract Passport {
     }
 
     function addCitizen(
-        string memory _countryCode,
+        bytes32 _hash,
         string memory _subdivisionCode,
         uint8 _age,
         bool _immunityStatus
     ) public verified {
-        passportCount++;
-        passport[passportCount] = Citizen(
-            passportCount,
-            _countryCode,
-            _subdivisionCode,
-            _age,
-            _immunityStatus
-        );
+        passport[_hash] = Citizen(_subdivisionCode, _age, _immunityStatus);
         if (_immunityStatus) {
-            emit PositiveCase(_countryCode, _subdivisionCode, _age);
+            emit ImmuneCase(_subdivisionCode, _age);
         }
+    }
+
+    function isImmune(bytes32 _hash) public view returns (bool) {
+        return passport[_hash].immunityStatus;
     }
 
     event Transfer(address indexed _address, uint256 _amount);
     event VerifiedUser(address indexed _address);
     event UnverifiedUser(address indexed _address);
-    event PositiveCase(
-        string _countryCode,
-        string _subdivisionCode,
-        uint8 _age
-    );
+    event ImmuneCase(string _subdivisionCode, uint8 _age);
 }
