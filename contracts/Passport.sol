@@ -2,7 +2,7 @@
 pragma solidity ^0.7.4;
 
 contract Passport {
-    address public owner;
+    address owner;
     mapping(address => bool) verifiedUsers;
 
     mapping(uint256 => Citizen) public passport;
@@ -12,7 +12,7 @@ contract Passport {
         uint256 id; // temporary uint id for testing
         string countryCode; // store country code of citizen (eg GB-ENG = England)
         string subdivisionCode; // store county code of citizen eg (GB-NBL = Northumberland)
-        uint16 age;
+        uint8 age;
         bool immunityStatus; // bool representing immunity status of citizen (true = immune)
     }
 
@@ -55,7 +55,7 @@ contract Passport {
     function addCitizen(
         string memory _countryCode,
         string memory _subdivisionCode,
-        uint16 _age,
+        uint8 _age,
         bool _immunityStatus
     ) public verified {
         passportCount++;
@@ -77,6 +77,6 @@ contract Passport {
     event PositiveCase(
         string _countryCode,
         string _subdivisionCode,
-        uint16 _age
+        uint8 _age
     );
 }
