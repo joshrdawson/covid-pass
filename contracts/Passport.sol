@@ -4,12 +4,16 @@ pragma solidity ^0.7.4;
 contract Passport {
     address administrator; // address of who deployed the contract (admin access for certain operations)
     mapping(address => bool) verifiedUsers; // mapping of verified users
-    mapping(bytes32 => Citizen) public passport; // map hashes to citizens
+    mapping(bytes32 => Citizen) public passport; // map hashes to citizens (wont be public in final implementation)
+    mapping(uint256 => bytes32) public ids;
+    uint256 public passportCount = 0;
 
     struct Citizen {
+        bytes32 hashID;
         string subdivisionCode; // store county code of citizen eg (GB-NBL = Northumberland)
         uint8 age;
-        bool immunityStatus; // bool representing immunity status of citizen (true = immune)
+        bool immunity; // a bool to represent immunity (true = immune)
+        uint256 immuneTime;
     }
 
     constructor() {
@@ -54,14 +58,43 @@ contract Passport {
         uint8 _age,
         bool _immunityStatus
     ) public verified {
-        passport[_hash] = Citizen(_subdivisionCode, _age, _immunityStatus);
+        Citizen memory newCitizen;
+        if (_immunityStatus) {
+            newCitizen = Citizen(
+                _hash,
+                _subdivisionCode,
+                _age,
+                _immunityStatus,
+                block.timestamp
+            );
+        } else {
+            newCitizen = Citizen(
+                _hash,
+                _subdivisionCode,
+                _age,
+                _immunityStatus,
+                0
+            );
+        }
+        passport[_hash] = newCitizen;
+
+        passportCount++;
+        ids[passportCount] = _hash;
+
         if (_immunityStatus) {
             emit ImmuneCase(_subdivisionCode, _age);
         }
     }
 
     function isImmune(bytes32 _hash) public view returns (bool) {
-        return passport[_hash].immunityStatus;
+        return passport[_hash].immunity;
+    }
+
+    function updateImmunity(bytes32 _hash, bool _immunityStatus)
+        public
+        verified
+    {
+        passport[_hash].immunity = _immunityStatus;
     }
 
     event Transfer(address indexed _address, uint256 _amount);
@@ -69,3 +102,7 @@ contract Passport {
     event UnverifiedUser(address indexed _address);
     event ImmuneCase(string _subdivisionCode, uint8 _age);
 }
+
+// TODO: Add timed function which changes immunity status after 14 days (from addition to the blockchain)
+// TODO: Have citizens indexed by an integer, and then every 24 hours change immunity status from true = false if 14 days has passed
+// TODO: Check if citizen exists before doing immunity checks
