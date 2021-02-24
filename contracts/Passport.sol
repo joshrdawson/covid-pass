@@ -10,7 +10,7 @@ contract Passport {
     uint256 public lastAutoUpdate = 0;
 
     struct Citizen {
-        uint256 entrynumber;
+        uint256 entrynumber; // stores which entry the citizen is in the entries mapping. used to iterate through citizens periodically to check they are still immune
         string subdivisionCode; // store county code of citizen eg (GB-NBL = Northumberland)
         uint8 age;
         bool immunity; // a bool to represent immunity (true = immune)
@@ -88,13 +88,20 @@ contract Passport {
 
     function removeCitizen(bytes32 _hash) public verified {
         // delete the entry from entries and shift all entries down 1
-        for (uint256 i = passports[_hash].entrynumber; i <= entryCount; i++) {
-            entries[i] = entries[i + 1];
-        }
-        delete entries[entryCount]; // delete the final entry
-        entryCount--;
+        if (bytes(passports[_hash].subdivisionCode).length != 0) {
+            // if an entry doesnt exist, it has contains. this check ensures you are deleting an entry which exists, if subdivisioncode length is 0 then an entry doesnt exist.
+            for (
+                uint256 i = passports[_hash].entrynumber;
+                i <= entryCount;
+                i++
+            ) {
+                entries[i] = entries[i + 1];
+            }
+            delete entries[entryCount]; // delete the final entry
+            entryCount--;
 
-        delete passports[_hash];
+            delete passports[_hash];
+        }
     }
 
     function isImmune(bytes32 _hash) public view returns (bool) {
@@ -147,6 +154,7 @@ contract Passport {
             1,
             true
         );
+
         addCitizen(
             0x67fad3bfa1e0321bd021ca805ce14876e50acac8ca8532eda8cbf924da565160,
             "ENG-BBB",
@@ -203,5 +211,3 @@ contract Passport {
         );
     }
 }
-
-//TODO: Can remove citizens which dont exist and program will remove index 0
