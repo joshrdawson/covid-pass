@@ -141,84 +141,67 @@ contract Passport {
     function addTestingCitizens() public admin {
         // temporary testing function to populate citizens
 
-        passports[
-            0x3ac225168df54212a25c1c01fd35bebfea408fdac2e31ddd6f80a4bbf9a5f1cb
-        ] = Citizen(entryCount, "ENG-AAA", 1, true, block.timestamp);
-        entries[
-            entryCount
-        ] = 0x3ac225168df54212a25c1c01fd35bebfea408fdac2e31ddd6f80a4bbf9a5f1cb;
-        entryCount++;
-
-        passports[
-            0x67fad3bfa1e0321bd021ca805ce14876e50acac8ca8532eda8cbf924da565160
-        ] = Citizen(entryCount, "ENG-BBB", 2, false, 0);
-        entries[
-            entryCount
-        ] = 0x67fad3bfa1e0321bd021ca805ce14876e50acac8ca8532eda8cbf924da565160;
-        entryCount++;
-
-        passports[
-            0x4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45
-        ] = Citizen(entryCount, "ENG-CCC", 3, true, block.timestamp);
-        entries[
-            entryCount
-        ] = 0x4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45;
-        entryCount++;
-
-        passports[
-            0x48bed44d1bcd124a28c27f343a817e5f5243190d3c52bf347daf876de1dbbf77
-        ] = Citizen(entryCount, "ENG-DDD", 4, true, block.timestamp);
-        entries[
-            entryCount
-        ] = 0x48bed44d1bcd124a28c27f343a817e5f5243190d3c52bf347daf876de1dbbf77;
-        entryCount++;
-
-        passports[
-            0x6377c7e66081cb65e473c1b95db5195a27d04a7108b468890224bedbe1a8a6eb
-        ] = Citizen(entryCount, "ENG-EEE", 5, false, 0);
-        entries[
-            entryCount
-        ] = 0x6377c7e66081cb65e473c1b95db5195a27d04a7108b468890224bedbe1a8a6eb;
-        entryCount++;
-
-        passports[
-            0xacd0c377fe36d5b209125185bc3ac41155ed1bf7103ef9f0c2aff4320460b6df
-        ] = Citizen(entryCount, "ENG-FFF", 6, true, block.timestamp);
-        entries[
-            entryCount
-        ] = 0xacd0c377fe36d5b209125185bc3ac41155ed1bf7103ef9f0c2aff4320460b6df;
-        entryCount++;
-
-        passports[
-            0xa82aec019867b7307551dc397acde18b541e742fa1a4e53df4ce3b02d462f524
-        ] = Citizen(entryCount, "ENG-GGG", 7, false, 0);
-        entries[
-            entryCount
-        ] = 0xa82aec019867b7307551dc397acde18b541e742fa1a4e53df4ce3b02d462f524;
-        entryCount++;
-
-        passports[
-            0x48624fa43c68d5c552855a4e2919e74645f683f5384f72b5b051b71ea41d4f2d
-        ] = Citizen(entryCount, "ENG-HHH", 8, false, 0);
-        entries[
-            entryCount
-        ] = 0x48624fa43c68d5c552855a4e2919e74645f683f5384f72b5b051b71ea41d4f2d;
-        entryCount++;
-
-        passports[
-            0x34fb2702da7001bf4dbf26a1e4cf31044bd95b85e1017596ee2d23aedc90498b
-        ] = Citizen(entryCount, "ENG-III", 9, true, block.timestamp);
-        entries[
-            entryCount
-        ] = 0x34fb2702da7001bf4dbf26a1e4cf31044bd95b85e1017596ee2d23aedc90498b;
-        entryCount++;
-
-        passports[
-            0xf8da54b5a7dd75028acb077ee61e8dde47ed37c746703ce764edf4a789eb2103
-        ] = Citizen(entryCount, "ENG-JJJ", 5, false, 0);
-        entries[
-            entryCount
-        ] = 0xf8da54b5a7dd75028acb077ee61e8dde47ed37c746703ce764edf4a789eb2103;
-        entryCount++;
+        addCitizen(
+            0x3ac225168df54212a25c1c01fd35bebfea408fdac2e31ddd6f80a4bbf9a5f1cb,
+            "ENG-AAA",
+            1,
+            true
+        );
+        addCitizen(
+            0x67fad3bfa1e0321bd021ca805ce14876e50acac8ca8532eda8cbf924da565160,
+            "ENG-BBB",
+            2,
+            true
+        );
+        addCitizen(
+            0x4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45,
+            "ENG-CCC",
+            3,
+            false
+        );
+        addCitizen(
+            0x48bed44d1bcd124a28c27f343a817e5f5243190d3c52bf347daf876de1dbbf77,
+            "ENG-DDD",
+            4,
+            true
+        );
+        addCitizen(
+            0x6377c7e66081cb65e473c1b95db5195a27d04a7108b468890224bedbe1a8a6eb,
+            "ENG-EEE",
+            5,
+            false
+        );
+        addCitizen(
+            0xacd0c377fe36d5b209125185bc3ac41155ed1bf7103ef9f0c2aff4320460b6df,
+            "ENG-FFF",
+            6,
+            false
+        );
+        addCitizen(
+            0xa82aec019867b7307551dc397acde18b541e742fa1a4e53df4ce3b02d462f524,
+            "ENG-GGG",
+            7,
+            false
+        );
+        addCitizen(
+            0x48624fa43c68d5c552855a4e2919e74645f683f5384f72b5b051b71ea41d4f2d,
+            "ENG-HHH",
+            8,
+            true
+        );
+        addCitizen(
+            0x34fb2702da7001bf4dbf26a1e4cf31044bd95b85e1017596ee2d23aedc90498b,
+            "ENG-III",
+            9,
+            true
+        );
+        addCitizen(
+            0xf8da54b5a7dd75028acb077ee61e8dde47ed37c746703ce764edf4a789eb2103,
+            "ENG-JJJ",
+            10,
+            false
+        );
     }
 }
+
+//TODO: Can remove citizens which dont exist and program will remove index 0
