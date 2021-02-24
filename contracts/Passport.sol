@@ -5,11 +5,12 @@ contract Passport {
     address administrator; // address of who deployed the contract (admin access for certain operations)
     mapping(address => bool) verifiedUsers; // mapping of verified users
     mapping(bytes32 => Citizen) public passports; // map hashes to citizens (wont be public in final implementation)
-    mapping(uint256 => bytes32) public ids;
-    uint256 public passportCount = 0;
+    mapping(uint256 => bytes32) public entries;
+    uint256 public entryCount = 0;
     uint256 public lastAutoUpdate = 0;
 
     struct Citizen {
+        uint256 entrynumber;
         string subdivisionCode; // store county code of citizen eg (GB-NBL = Northumberland)
         uint8 age;
         bool immunity; // a bool to represent immunity (true = immune)
@@ -60,24 +61,40 @@ contract Passport {
         bool _immunityStatus
     ) public verified {
         Citizen memory newCitizen;
+        entries[entryCount] = _hash;
         if (_immunityStatus) {
             newCitizen = Citizen(
+                entryCount,
                 _subdivisionCode,
                 _age,
                 _immunityStatus,
                 block.timestamp
             );
         } else {
-            newCitizen = Citizen(_subdivisionCode, _age, _immunityStatus, 0);
+            newCitizen = Citizen(
+                entryCount,
+                _subdivisionCode,
+                _age,
+                _immunityStatus,
+                0
+            );
         }
         passports[_hash] = newCitizen;
-
-        passportCount++;
-        ids[passportCount] = _hash;
-
+        entryCount++;
         if (_immunityStatus) {
             emit ImmuneCase(_subdivisionCode, _age);
         }
+    }
+
+    function removeCitizen(bytes32 _hash) public verified {
+        // delete the entry from entries and shift all entries down 1
+        for (uint256 i = passports[_hash].entrynumber; i <= entryCount; i++) {
+            entries[i] = entries[i + 1];
+        }
+        delete entries[entryCount]; // delete the final entry
+        entryCount--;
+
+        delete passports[_hash];
     }
 
     function isImmune(bytes32 _hash) public view returns (bool) {
@@ -98,13 +115,20 @@ contract Passport {
     }
 
     function autoUpdateImmunity() public verified {
+        uint256 updateCount = 0;
         if (lastAutoUpdate + 5 < block.timestamp) {
-            for (uint256 i = 1; i < passportCount; i++) {
-                if (passports[ids[i]].immunity == true) {
-                    passports[ids[i]].immunity = false;
-                    passports[ids[i]].immuneTime = 0;
+            for (uint256 i = 1; i <= entryCount; i++) {
+                if (
+                    passports[entries[i]].immunity == true &&
+                    passports[entries[i]].immuneTime + 30 < block.timestamp
+                ) {
+                    // change immunity of citizen if they are immune and the set time period has past (in seconds)
+                    passports[entries[i]].immunity = false;
+                    passports[entries[i]].immuneTime = 0;
+                    updateCount++;
                 }
             }
+            emit AutoImmunityUpdate(updateCount);
         }
     }
 
@@ -112,87 +136,89 @@ contract Passport {
     event VerifiedUser(address indexed _address);
     event UnverifiedUser(address indexed _address);
     event ImmuneCase(string _subdivisionCode, uint8 _age);
+    event AutoImmunityUpdate(uint256 _updateCount);
 
     function addTestingCitizens() public admin {
         // temporary testing function to populate citizens
+
         passports[
             0x3ac225168df54212a25c1c01fd35bebfea408fdac2e31ddd6f80a4bbf9a5f1cb
-        ] = Citizen("ENG-AAA", 1, true, block.timestamp);
-        ids[
-            1
+        ] = Citizen(entryCount, "ENG-AAA", 1, true, block.timestamp);
+        entries[
+            entryCount
         ] = 0x3ac225168df54212a25c1c01fd35bebfea408fdac2e31ddd6f80a4bbf9a5f1cb;
-        passportCount++;
+        entryCount++;
 
         passports[
             0x67fad3bfa1e0321bd021ca805ce14876e50acac8ca8532eda8cbf924da565160
-        ] = Citizen("ENG-BBB", 2, false, 0);
-        ids[
-            2
+        ] = Citizen(entryCount, "ENG-BBB", 2, false, 0);
+        entries[
+            entryCount
         ] = 0x67fad3bfa1e0321bd021ca805ce14876e50acac8ca8532eda8cbf924da565160;
-        passportCount++;
+        entryCount++;
 
         passports[
             0x4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45
-        ] = Citizen("ENG-CCC", 3, true, block.timestamp);
-        ids[
-            3
+        ] = Citizen(entryCount, "ENG-CCC", 3, true, block.timestamp);
+        entries[
+            entryCount
         ] = 0x4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45;
-        passportCount++;
+        entryCount++;
 
         passports[
             0x48bed44d1bcd124a28c27f343a817e5f5243190d3c52bf347daf876de1dbbf77
-        ] = Citizen("ENG-DDD", 4, true, block.timestamp);
-        ids[
-            4
+        ] = Citizen(entryCount, "ENG-DDD", 4, true, block.timestamp);
+        entries[
+            entryCount
         ] = 0x48bed44d1bcd124a28c27f343a817e5f5243190d3c52bf347daf876de1dbbf77;
-        passportCount++;
+        entryCount++;
 
         passports[
             0x6377c7e66081cb65e473c1b95db5195a27d04a7108b468890224bedbe1a8a6eb
-        ] = Citizen("ENG-EEE", 5, false, 0);
-        ids[
-            5
+        ] = Citizen(entryCount, "ENG-EEE", 5, false, 0);
+        entries[
+            entryCount
         ] = 0x6377c7e66081cb65e473c1b95db5195a27d04a7108b468890224bedbe1a8a6eb;
-        passportCount++;
+        entryCount++;
 
         passports[
             0xacd0c377fe36d5b209125185bc3ac41155ed1bf7103ef9f0c2aff4320460b6df
-        ] = Citizen("ENG-FFF", 6, true, block.timestamp);
-        ids[
-            6
+        ] = Citizen(entryCount, "ENG-FFF", 6, true, block.timestamp);
+        entries[
+            entryCount
         ] = 0xacd0c377fe36d5b209125185bc3ac41155ed1bf7103ef9f0c2aff4320460b6df;
-        passportCount++;
+        entryCount++;
 
         passports[
             0xa82aec019867b7307551dc397acde18b541e742fa1a4e53df4ce3b02d462f524
-        ] = Citizen("ENG-GGG", 7, false, 0);
-        ids[
-            7
+        ] = Citizen(entryCount, "ENG-GGG", 7, false, 0);
+        entries[
+            entryCount
         ] = 0xa82aec019867b7307551dc397acde18b541e742fa1a4e53df4ce3b02d462f524;
-        passportCount++;
+        entryCount++;
 
         passports[
             0x48624fa43c68d5c552855a4e2919e74645f683f5384f72b5b051b71ea41d4f2d
-        ] = Citizen("ENG-HHH", 8, false, 0);
-        ids[
-            8
+        ] = Citizen(entryCount, "ENG-HHH", 8, false, 0);
+        entries[
+            entryCount
         ] = 0x48624fa43c68d5c552855a4e2919e74645f683f5384f72b5b051b71ea41d4f2d;
-        passportCount++;
+        entryCount++;
 
         passports[
             0x34fb2702da7001bf4dbf26a1e4cf31044bd95b85e1017596ee2d23aedc90498b
-        ] = Citizen("ENG-III", 9, true, block.timestamp);
-        ids[
-            9
+        ] = Citizen(entryCount, "ENG-III", 9, true, block.timestamp);
+        entries[
+            entryCount
         ] = 0x34fb2702da7001bf4dbf26a1e4cf31044bd95b85e1017596ee2d23aedc90498b;
-        passportCount++;
+        entryCount++;
 
         passports[
             0xf8da54b5a7dd75028acb077ee61e8dde47ed37c746703ce764edf4a789eb2103
-        ] = Citizen("ENG-JJJ", 5, false, 0);
-        ids[
-            10
+        ] = Citizen(entryCount, "ENG-JJJ", 5, false, 0);
+        entries[
+            entryCount
         ] = 0xf8da54b5a7dd75028acb077ee61e8dde47ed37c746703ce764edf4a789eb2103;
-        passportCount++;
+        entryCount++;
     }
 }
