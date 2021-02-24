@@ -196,7 +196,3 @@ contract Passport {
         passportCount++;
     }
 }
-
-// TODO: Add timed function which changes immunity status after 14 days (from addition to the blockchain)
-// TODO: Have citizens indexed by an integer, and then every 24 hours change immunity status from true = false if 14 days has passed
-// TODO: Check if citizen exists before doing immunity checks
