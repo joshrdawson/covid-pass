@@ -2,7 +2,7 @@
 pragma solidity ^0.7.4;
 
 contract Passport {
-    address administrator; // address of who deployed the contract (admin access for certain operations)
+    address public administrator; // address of who deployed the contract (admin access for certain operations)
     mapping(address => bool) verifiedUsers; // mapping of verified users
     mapping(bytes32 => Citizen) public passports; // map hashes to citizens (wont be public in final implementation)
     mapping(uint256 => bytes32) public entries;
