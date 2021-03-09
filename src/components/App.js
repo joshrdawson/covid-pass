@@ -4,43 +4,6 @@ import React, { Component } from "react";
 import Web3 from "web3";
 import "./App.css";
 import UserDetails from "./UserDetails.js";
-
-function verifyUserDetails(name, NHSNumber, age, subdivisionCode, status) {
-  try {
-    // check entered between 1-3 names (forename, middlename, surname)
-    var names = name.split(" ");
-    if (names.length > 3) {
-      throw "Invalid name!";
-    }
-
-    // check entered valid NHS Number (3 digits, followed by 3 digits, followed by 4 digits)
-    var NHSRegex = /^[0-9]{3}-[0-9]{3}-[0-9]{4}$/;
-    var checkNHS = NHSNumber.match(NHSRegex);
-    if (checkNHS === null) {
-      throw "Invalid NHSNumber!";
-    }
-    NHSNumber = checkNHS[0];
-
-    // check age is a valid age (1-120)
-    if (age < 1 || age > 120) {
-      throw "Invalid Age!";
-    }
-
-    // check subdivision code
-    var subdivisionRegex = /\bGB-[A-Z]{3}/;
-    var checkSubdivision = subdivisionCode.match(subdivisionRegex);
-    if (checkSubdivision === null) {
-      throw "Invalid subdivision code!";
-    }
-    subdivisionCode = checkSubdivision[0];
-    return true;
-  } catch (e) {
-    console.log("error: ", e);
-    window.alert("Error adding user");
-    return false;
-  }
-}
-
 class App extends Component {
   async componentDidMount() {
     await this.loadBlockchainData(this.props.dispatch);
@@ -65,7 +28,7 @@ class App extends Component {
       try {
         const passport = new web3.eth.Contract(Passport.abi, Passport.networks[networkID].address);
         this.setState({ passport: passport });
-        this.setVerifiedStatus();
+        this.getVerifiedStatus();
       } catch (e) {
         console.log("error: ", e);
         window.alert("Contract not deployed to the current network");
@@ -75,7 +38,7 @@ class App extends Component {
     }
   }
 
-  async setVerifiedStatus() {
+  async getVerifiedStatus() {
     if (this.state.passport !== "undefined") {
       try {
         const s = await this.state.passport.methods.isVerified(this.state.account).call({ from: this.state.account });
@@ -92,6 +55,21 @@ class App extends Component {
       try {
         const u = await this.state.passport.methods.passports(h).call({ from: this.state.account });
         this.setState({ age: u.age, status: u.immunity.toString(), subdivisionCode: u.subdivisionCode });
+      } catch (e) {
+        console.log("Get error: ", e);
+        this.setState({ verified: false });
+      }
+    }
+  }
+
+  async addCitizen(NHSNumber, name, age, subdivisionCode, status) {
+    if (this.state.passport !== "undefined") {
+      try {
+        const createKeccakHash = require("keccak");
+        const hash = createKeccakHash("keccak256")
+          .update(NHSNumber + name + subdivisionCode)
+          .digest("hex");
+        await this.state.passport.methods.addCitizen("0x" + hash, subdivisionCode, age, status).send({ from: this.state.account });
       } catch (e) {
         console.log("Get error: ", e);
         this.setState({ verified: false });
@@ -144,9 +122,9 @@ class App extends Component {
                             let NHSNumber = this.userNHSNumber.value;
                             let age = this.userAge.value;
                             let subdivisionCode = this.userSubdivisionCode.value;
-                            let status = this.userStatus.value;
+                            let status = this.userStatus.value === "IMMUNE" ? true : false;
                             if (verifyUserDetails(name, NHSNumber, age, subdivisionCode, status)) {
-                              console.log("PASS");
+                              this.addCitizen(NHSNumber, name, age, subdivisionCode, status);
                             }
                           }}
                         >
@@ -187,7 +165,7 @@ class App extends Component {
                             <Form.Label>SUBDIVISION CODE</Form.Label>
                             <Form.Control
                               type="text"
-                              placeholder="ENG-LDN"
+                              placeholder="GB-LDN"
                               ref={(input) => {
                                 this.userSubdivisionCode = input;
                               }}
@@ -289,6 +267,42 @@ class App extends Component {
         </div>
       );
     }
+  }
+}
+
+function verifyUserDetails(name, NHSNumber, age, subdivisionCode, status) {
+  try {
+    // check entered between 1-3 names (forename, middlename, surname)
+    var names = name.split(" ");
+    if (names.length > 3) {
+      throw "Invalid name!";
+    }
+
+    // check entered valid NHS Number (3 digits, followed by 3 digits, followed by 4 digits)
+    var NHSRegex = /^[0-9]{3}-[0-9]{3}-[0-9]{4}$/;
+    var checkNHS = NHSNumber.match(NHSRegex);
+    if (checkNHS === null) {
+      throw "Invalid NHSNumber!";
+    }
+    NHSNumber = checkNHS[0];
+
+    // check age is a valid age (1-120)
+    if (age < 1 || age > 120) {
+      throw "Invalid Age!";
+    }
+
+    // check subdivision code
+    var subdivisionRegex = /\bGB-[A-Z]{3}/;
+    var checkSubdivision = subdivisionCode.match(subdivisionRegex);
+    if (checkSubdivision === null) {
+      throw "Invalid subdivision code!";
+    }
+    subdivisionCode = checkSubdivision[0];
+    return true;
+  } catch (e) {
+    console.log("error: ", e);
+    window.alert("Error adding user");
+    return false;
   }
 }
 
