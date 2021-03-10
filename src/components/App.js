@@ -54,25 +54,44 @@ class App extends Component {
     if (this.state.passport !== "undefined") {
       try {
         const u = await this.state.passport.methods.passports(h).call({ from: this.state.account });
-        this.setState({ age: u.age, status: u.immunity.toString(), subdivisionCode: u.subdivisionCode });
+        this.setState({ age: u.age, status: u.immunity.toString(), postcode: u.postcode });
       } catch (e) {
         console.log("Get error: ", e);
-        this.setState({ verified: false });
       }
     }
   }
 
-  async addCitizen(NHSNumber, name, age, subdivisionCode, status) {
+  async addCitizen(name, NHSNumber, age, postcode, status) {
     if (this.state.passport !== "undefined") {
       try {
-        const createKeccakHash = require("keccak");
-        const hash = createKeccakHash("keccak256")
-          .update(NHSNumber + name + subdivisionCode)
-          .digest("hex");
-        await this.state.passport.methods.addCitizen("0x" + hash, subdivisionCode, age, status).send({ from: this.state.account });
+        let hash = generateHash(NHSNumber, name, age, postcode);
+        await this.state.passport.methods.addCitizen("0x" + hash, postcode, age, status).send({ from: this.state.account });
+        window.alert("Added " + name + " succsesfully");
       } catch (e) {
         console.log("Get error: ", e);
-        this.setState({ verified: false });
+      }
+    }
+  }
+
+  async removeCitizen(name, NHSNumber, age, postcode) {
+    if (this.state.passport !== "undefined") {
+      try {
+        let hash = generateHash(NHSNumber, name, age, postcode);
+        await this.state.passport.methods.removeCitizen("0x" + hash).send({ from: this.state.account });
+        window.alert("Removed " + name + " succsesfully");
+      } catch (e) {
+        console.log("Get error: ", e);
+      }
+    }
+  }
+
+  async addVerifiedUser(address) {
+    if (this.state.passport !== "undefined") {
+      try {
+        await this.state.passport.methods.addVerifiedUser(address).send({ from: this.state.account });
+        window.alert("Added " + address + " succsesfully");
+      } catch (e) {
+        console.log("Get error: ", e);
       }
     }
   }
@@ -87,7 +106,7 @@ class App extends Component {
       verified: false,
       user: {
         age: "undefined",
-        subdivisionCode: "undefined",
+        postcode: "undefined",
         status: "undefined",
       },
     };
@@ -108,7 +127,7 @@ class App extends Component {
               <main role="main" className="col-lg-12 d-flex text-center">
                 <div className="content mr-auto ml-auto">
                   <Tabs defaultActiveKey="profile" id="uncontrolled-tab-example">
-                    <Tab eventKey="set" title="Add Citizen">
+                    <Tab eventKey="addCitizen" title="Add Citizen">
                       <div>
                         <br />
                         <h4>
@@ -121,10 +140,10 @@ class App extends Component {
                             let name = this.userName.value;
                             let NHSNumber = this.userNHSNumber.value;
                             let age = this.userAge.value;
-                            let subdivisionCode = this.userSubdivisionCode.value;
+                            let postcode = this.userPostcode.value;
                             let status = this.userStatus.value === "IMMUNE" ? true : false;
-                            if (verifyUserDetails(name, NHSNumber, age, subdivisionCode, status)) {
-                              this.addCitizen(NHSNumber, name, age, subdivisionCode, status);
+                            if (verifyUserDetails(name, NHSNumber, age, postcode)) {
+                              this.addCitizen(name, NHSNumber, age, postcode, status);
                             }
                           }}
                         >
@@ -161,13 +180,13 @@ class App extends Component {
                             />
                           </Form.Group>
 
-                          <Form.Group controlId="userSubdivisionCode">
-                            <Form.Label>SUBDIVISION CODE</Form.Label>
+                          <Form.Group controlId="userPostcode">
+                            <Form.Label>POSTCODE</Form.Label>
                             <Form.Control
                               type="text"
-                              placeholder="GB-LDN"
+                              placeholder="NE1 4LP"
                               ref={(input) => {
-                                this.userSubdivisionCode = input;
+                                this.userPostcode = input;
                               }}
                             />
                           </Form.Group>
@@ -192,10 +211,108 @@ class App extends Component {
                       </div>
                     </Tab>
 
-                    <Tab eventKey="get" title="Account Details">
+                    <Tab eventKey="removeCitizen" title="Remove Citizen">
+                      <div>
+                        <br />
+                        <h4>
+                          <b>DETAILS:</b>
+                        </h4>
+                        <br />
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            let name = this.removeUserName.value;
+                            let NHSNumber = this.removeUserNHSNumber.value;
+                            let age = this.removeUserAge.value;
+                            let postcode = this.removeUserPostcode.value;
+                            if (verifyUserDetails(name, NHSNumber, age, postcode)) {
+                              this.removeCitizen(name, NHSNumber, age, postcode);
+                            }
+                          }}
+                        >
+                          <Form.Group controlId="userName">
+                            <Form.Label>NAME</Form.Label>
+                            <Form.Control
+                              type="text"
+                              placeholder="name"
+                              ref={(input) => {
+                                this.removeUserName = input;
+                              }}
+                            />
+                          </Form.Group>
+
+                          <Form.Group controlId="userNHSNumber">
+                            <Form.Label>NHS NUMBER</Form.Label>
+                            <Form.Control
+                              type="text"
+                              placeholder="000-000-0000"
+                              ref={(input) => {
+                                this.removeUserNHSNumber = input;
+                              }}
+                            />
+                          </Form.Group>
+
+                          <Form.Group controlId="userAge">
+                            <Form.Label>AGE</Form.Label>
+                            <Form.Control
+                              type="text"
+                              placeholder="age"
+                              ref={(input) => {
+                                this.removeUserAge = input;
+                              }}
+                            />
+                          </Form.Group>
+
+                          <Form.Group controlId="userPostcode">
+                            <Form.Label>POSTCODE</Form.Label>
+                            <Form.Control
+                              type="text"
+                              placeholder="NE1 4LP"
+                              ref={(input) => {
+                                this.removeUserPostcode = input;
+                              }}
+                            />
+                          </Form.Group>
+
+                          <button type="submit" className="btn btn-primary">
+                            SUBMIT
+                          </button>
+                        </form>
+                      </div>
+                    </Tab>
+
+                    <Tab eventKey="adminTools" title="Administrative Tools">
                       <div>
                         <br />
                         <p>Balance: {this.state.balance} ETH</p>
+                        <div>
+                          <br />
+                          <h4>VERIFY ACCOUNT</h4>
+                          <br />
+                          <form
+                            onSubmit={(e) => {
+                              e.preventDefault();
+                              let address = this.verifyAddress.value;
+                              if (Web3.utils.isAddress(address)) {
+                                this.addVerifiedUser(address);
+                              }
+                            }}
+                          >
+                            <Form.Group controlId="verifyAddress">
+                              <Form.Label>ADDRESS</Form.Label>
+                              <Form.Control
+                                type="text"
+                                placeholder="0x......."
+                                ref={(input) => {
+                                  this.verifyAddress = input;
+                                }}
+                              />
+                            </Form.Group>
+                            <button type="submit" className="btn btn-primary">
+                              SUBMIT
+                            </button>
+                          </form>
+                        </div>
                       </div>
                     </Tab>
                   </Tabs>
@@ -249,7 +366,7 @@ class App extends Component {
                           </button>
                         </form>
                         <br />
-                        <UserDetails age={this.state.age} subdivisionCode={this.state.subdivisionCode} status={this.state.status} />
+                        <UserDetails age={this.state.age} postcode={this.state.postcode} status={this.state.status} />
                       </div>
                     </Tab>
 
@@ -270,7 +387,17 @@ class App extends Component {
   }
 }
 
-function verifyUserDetails(name, NHSNumber, age, subdivisionCode, status) {
+function generateHash(name, NHSNumber, age, postcode) {
+  let createKeccakHash = require("keccak");
+  let hash = createKeccakHash("keccak256")
+    .update(NHSNumber + name + age + postcode)
+    .digest("hex");
+  console.log(hash);
+  createKeccakHash = null;
+  return hash;
+}
+
+function verifyUserDetails(name, NHSNumber, age, postcode) {
   try {
     // check entered between 1-3 names (forename, middlename, surname)
     var names = name.split(" ");
@@ -291,17 +418,17 @@ function verifyUserDetails(name, NHSNumber, age, subdivisionCode, status) {
       throw "Invalid Age!";
     }
 
-    // check subdivision code
-    var subdivisionRegex = /\bGB-[A-Z]{3}/;
-    var checkSubdivision = subdivisionCode.match(subdivisionRegex);
-    if (checkSubdivision === null) {
-      throw "Invalid subdivision code!";
+    // check postcode is valid
+    var postcodeRegex = /([Gg][Ii][Rr] 0[Aa]{2})|((([A-Za-z][0-9]{1,2})|(([A-Za-z][A-Ha-hJ-Yj-y][0-9]{1,2})|(([A-Za-z][0-9][A-Za-z])|([A-Za-z][A-Ha-hJ-Yj-y][0-9][A-Za-z]?))))\s?[0-9][A-Za-z]{2})/;
+    var checkPostcode = postcode.match(postcodeRegex);
+    if (checkPostcode === null) {
+      throw "Invalid postcode!";
     }
-    subdivisionCode = checkSubdivision[0];
+    postcode = checkPostcode[0];
     return true;
   } catch (e) {
     console.log("error: ", e);
-    window.alert("Error adding user");
+    window.alert("Error invalid user details: " + e);
     return false;
   }
 }

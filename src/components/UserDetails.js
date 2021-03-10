@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, ListGroup } from "react-bootstrap";
 
-const UserDetails = ({ age, subdivisionCode, status }) => {
+const UserDetails = ({ age, postcode, status }) => {
   if (age === "0") {
     return (
       <div style={{ width: "40rem" }}>
@@ -17,7 +17,7 @@ const UserDetails = ({ age, subdivisionCode, status }) => {
             <b>{typeof age === "undefined" ? "" : status === "true" ? "ALLOW ENTRY" : "NO ENTRY"}</b>
           </ListGroup.Item>
           <ListGroup.Item>{typeof age === "undefined" ? "" : age + " years old"}</ListGroup.Item>
-          <ListGroup.Item>{typeof age === "undefined" ? "" : subdivisionCode}</ListGroup.Item>
+          <ListGroup.Item>{typeof age === "undefined" ? "" : postcode}</ListGroup.Item>
         </ListGroup>
       </Card>
     </div>
