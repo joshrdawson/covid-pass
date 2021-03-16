@@ -93,13 +93,8 @@ contract Passport {
         public
         verified
     {
-        if (_immunityStatus) {
-            passports[_hash].immunity = _immunityStatus;
-            passports[_hash].immuneTime = block.timestamp;
-        } else {
-            passports[_hash].immunity = _immunityStatus;
-            passports[_hash].immuneTime = 0;
-        }
+        passports[_hash].immunity = _immunityStatus;
+        passports[_hash].immuneTime = _immunityStatus ? block.timestamp : 0;
     }
 
     function autoUpdateImmunity() public verified {

@@ -44,7 +44,7 @@ class App extends Component {
         const s = await this.state.passport.methods.isVerified(this.state.account).call({ from: this.state.account });
         this.setState({ verified: s });
       } catch (e) {
-        console.log("Get error: ", e);
+        console.log("Error getting verified status: ", e);
         this.setState({ verified: false });
       }
     }
@@ -56,7 +56,7 @@ class App extends Component {
         const u = await this.state.passport.methods.passports(h).call({ from: this.state.account });
         this.setState({ age: u.age, status: u.immunity.toString(), postcode: u.postcode });
       } catch (e) {
-        console.log("Get error: ", e);
+        console.log("Error getting user details: ", e);
       }
     }
   }
@@ -64,11 +64,23 @@ class App extends Component {
   async addCitizen(name, NHSNumber, age, postcode, status) {
     if (this.state.passport !== "undefined") {
       try {
-        let hash = generateHash(NHSNumber, name, age, postcode);
-        await this.state.passport.methods.addCitizen("0x" + hash, postcode, age, status).send({ from: this.state.account });
-        window.alert("Added " + name + " succsesfully");
+        let hash = generateHash(name, NHSNumber, age, postcode);
+        await this.state.passport.methods.addCitizen(`0x${hash}`, postcode, age, status).send({ from: this.state.account });
+        window.alert(`Added ${name} succesfully`);
       } catch (e) {
-        console.log("Get error: ", e);
+        console.log("Error adding citizen: ", e);
+      }
+    }
+  }
+
+  async updateCitizen(name, NHSNumber, age, postcode, newImmunity) {
+    if (this.state.passport !== "undefined") {
+      try {
+        let hash = generateHash(name, NHSNumber, age, postcode);
+        await this.state.passport.methods.updateImmunity(`0x${hash}`, newImmunity).send({ from: this.state.account });
+        window.alert(`Updated ${name} succesfully`);
+      } catch (e) {
+        console.log("Error updating citizen: ", e);
       }
     }
   }
@@ -76,11 +88,11 @@ class App extends Component {
   async removeCitizen(name, NHSNumber, age, postcode) {
     if (this.state.passport !== "undefined") {
       try {
-        let hash = generateHash(NHSNumber, name, age, postcode);
-        await this.state.passport.methods.removeCitizen("0x" + hash).send({ from: this.state.account });
-        window.alert("Removed " + name + " succsesfully");
+        let hash = generateHash(name, NHSNumber, age, postcode);
+        await this.state.passport.methods.removeCitizen(`0x${hash}`).send({ from: this.state.account });
+        window.alert(`Removed ${name} succesfully`);
       } catch (e) {
-        console.log("Get error: ", e);
+        console.log("Error removing citizen: ", e);
       }
     }
   }
@@ -89,9 +101,9 @@ class App extends Component {
     if (this.state.passport !== "undefined") {
       try {
         await this.state.passport.methods.addVerifiedUser(address).send({ from: this.state.account });
-        window.alert("Added " + address + " succsesfully");
+        window.alert(`Removed ${address} succesfully`);
       } catch (e) {
-        console.log("Get error: ", e);
+        console.log("Error adding verified user: ", e);
       }
     }
   }
@@ -197,6 +209,90 @@ class App extends Component {
                               as="select"
                               ref={(input) => {
                                 this.userStatus = input;
+                              }}
+                            >
+                              <option>IMMUNE</option>
+                              <option>NON-IMMUNE</option>
+                            </Form.Control>
+                          </Form.Group>
+
+                          <button type="submit" className="btn btn-primary">
+                            SUBMIT
+                          </button>
+                        </form>
+                      </div>
+                    </Tab>
+
+                    <Tab eventKey="updateCitizen" title="Update Citizen Immunity">
+                      <div>
+                        <br />
+                        <h4>
+                          <b>DETAILS:</b>
+                        </h4>
+                        <br />
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            let name = this.updateUserName.value;
+                            let NHSNumber = this.updateNHSNumber.value;
+                            let age = this.updateUserAge.value;
+                            let postcode = this.updateUserPostcode.value;
+                            let immunity = this.updateUserImmunity.value === "IMMUNE" ? true : false;
+                            if (verifyUserDetails(name, NHSNumber, age, postcode)) {
+                              this.updateCitizen(name, NHSNumber, age, postcode, immunity);
+                            }
+                          }}
+                        >
+                          <Form.Group controlId="userName">
+                            <Form.Label>NAME</Form.Label>
+                            <Form.Control
+                              type="text"
+                              placeholder="name"
+                              ref={(input) => {
+                                this.updateUserName = input;
+                              }}
+                            />
+                          </Form.Group>
+
+                          <Form.Group controlId="userNHSNumber">
+                            <Form.Label>NHS NUMBER</Form.Label>
+                            <Form.Control
+                              type="text"
+                              placeholder="000-000-0000"
+                              ref={(input) => {
+                                this.updateNHSNumber = input;
+                              }}
+                            />
+                          </Form.Group>
+
+                          <Form.Group controlId="userAge">
+                            <Form.Label>AGE</Form.Label>
+                            <Form.Control
+                              type="text"
+                              placeholder="age"
+                              ref={(input) => {
+                                this.updateUserAge = input;
+                              }}
+                            />
+                          </Form.Group>
+
+                          <Form.Group controlId="userPostcode">
+                            <Form.Label>POSTCODE</Form.Label>
+                            <Form.Control
+                              type="text"
+                              placeholder="NE1 4LP"
+                              ref={(input) => {
+                                this.updateUserPostcode = input;
+                              }}
+                            />
+                          </Form.Group>
+
+                          <Form.Group controlId="userStatus">
+                            <Form.Label>NEW COVID IMMUNITY STATUS</Form.Label>
+                            <Form.Control
+                              as="select"
+                              ref={(input) => {
+                                this.updateUserImmunity = input;
                               }}
                             >
                               <option>IMMUNE</option>
@@ -392,7 +488,6 @@ function generateHash(name, NHSNumber, age, postcode) {
   let hash = createKeccakHash("keccak256")
     .update(NHSNumber + name + age + postcode)
     .digest("hex");
-  console.log(hash);
   createKeccakHash = null;
   return hash;
 }
