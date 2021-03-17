@@ -5,21 +5,16 @@ contract Passport {
     address public administrator; // address of who deployed the contract (admin access for certain operations)
     mapping(address => bool) verifiedUsers; // mapping of verified users
     mapping(bytes32 => Citizen) public passports; // map hashes to citizens (wont be public in final implementation)
-    mapping(uint256 => bytes32) public entries;
-    uint256 public entryCount = 0;
-    uint256 public lastAutoUpdate = 0;
 
     struct Citizen {
         string postcode; // store county code of citizen eg (GB-NBL = Northumberland)
         uint8 age;
-        bool immunity; // a bool to represent immunity (true = immune)
-        uint256 immuneTime;
+        bool vaccinationStatus; // a bool to represent vaccination status (true = vaccinated)
     }
 
     constructor() {
         administrator = msg.sender;
         verifiedUsers[msg.sender] = true;
-        lastAutoUpdate = block.timestamp;
     }
 
     modifier admin() {
@@ -57,69 +52,32 @@ contract Passport {
         bytes32 _hash,
         string memory _postcode,
         uint8 _age,
-        bool _immunityStatus
+        bool _vaccinationStatus
     ) public verified {
         Citizen memory newCitizen;
-        entries[entryCount] = _hash;
-        if (_immunityStatus) {
-            newCitizen = Citizen(
-                _postcode,
-                _age,
-                _immunityStatus,
-                block.timestamp
-            );
+        if (_vaccinationStatus) {
+            newCitizen = Citizen(_postcode, _age, _vaccinationStatus);
         } else {
-            newCitizen = Citizen(_postcode, _age, _immunityStatus, 0);
+            newCitizen = Citizen(_postcode, _age, _vaccinationStatus);
         }
         passports[_hash] = newCitizen;
-        entryCount++;
-        if (_immunityStatus) {
-            emit ImmuneCase(_postcode, _age);
-        }
     }
 
     function removeCitizen(bytes32 _hash) public verified {
         // remove data regarding _hash
         passports[_hash].postcode = "";
         passports[_hash].age = 0;
-        passports[_hash].immunity = false;
+        passports[_hash].vaccinationStatus = false;
     }
 
-    function isImmune(bytes32 _hash) public view returns (bool) {
-        return passports[_hash].immunity;
-    }
-
-    function updateImmunity(bytes32 _hash, bool _immunityStatus)
-        public
-        verified
-    {
-        passports[_hash].immunity = _immunityStatus;
-        passports[_hash].immuneTime = _immunityStatus ? block.timestamp : 0;
-    }
-
-    function autoUpdateImmunity() public verified {
-        uint256 updateCount = 0;
-        if (lastAutoUpdate + 5 < block.timestamp) {
-            for (uint256 i = 1; i <= entryCount; i++) {
-                if (
-                    passports[entries[i]].immunity == true &&
-                    passports[entries[i]].immuneTime + 30 < block.timestamp
-                ) {
-                    // change immunity of citizen if they are immune and the set time period has past (in seconds)
-                    passports[entries[i]].immunity = false;
-                    passports[entries[i]].immuneTime = 0;
-                    updateCount++;
-                }
-            }
-            emit AutoImmunityUpdate(updateCount);
-        }
+    function isVaccinated(bytes32 _hash) public view returns (bool) {
+        return passports[_hash].vaccinationStatus;
     }
 
     event Transfer(address indexed _address, uint256 _amount);
     event VerifiedUser(address indexed _address);
     event UnverifiedUser(address indexed _address);
-    event ImmuneCase(string _postcode, uint8 _age);
-    event AutoImmunityUpdate(uint256 _updateCount);
+    event Vaccination(string _postcode, uint8 _age);
 
     function addTestingCitizens() public admin {
         // temporary testing function to populate citizens
