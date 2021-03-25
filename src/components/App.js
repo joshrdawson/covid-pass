@@ -4,6 +4,7 @@ import React, { Component } from "react";
 import Web3 from "web3";
 import "./App.css";
 import UserDetails from "./UserDetails.js";
+import VerifyUserDetails from "../VerifyUserDetails.js";
 class App extends Component {
   async componentDidMount() {
     await this.loadBlockchainData(this.props.dispatch);
@@ -85,11 +86,15 @@ class App extends Component {
     }
   }
 
-  async removeCitizen(name, NHSNumber, age, postcode) {
+  async removeCitizen(name, NHSNumber, age, postcode, hash) {
     if (this.state.passport !== "undefined") {
       try {
-        let hash = generateHash(name, NHSNumber, age, postcode);
-        await this.state.passport.methods.removeCitizen(`0x${hash}`).send({ from: this.state.account });
+        if (hash === "") {
+          hash = generateHash(name, NHSNumber, age, postcode);
+          await this.state.passport.methods.removeCitizen(`0x${hash}`).send({ from: this.state.account });
+        } else {
+          await this.state.passport.methods.removeCitizen(hash).send({ from: this.state.account });
+        }
         window.alert(`Removed ${name} succesfully`);
       } catch (e) {
         console.log("Error removing citizen: ", e);
@@ -153,7 +158,7 @@ class App extends Component {
                             let NHSNumber = this.userNHSNumber.value;
                             let age = this.userAge.value;
                             let postcode = this.userPostcode.value;
-                            if (verifyUserDetails(name, NHSNumber, age, postcode)) {
+                            if (VerifyUserDetails(name, NHSNumber, age, postcode)) {
                               this.addCitizen(name, NHSNumber, age, postcode);
                             }
                           }}
@@ -223,8 +228,16 @@ class App extends Component {
                             let NHSNumber = this.removeUserNHSNumber.value;
                             let age = this.removeUserAge.value;
                             let postcode = this.removeUserPostcode.value;
-                            if (verifyUserDetails(name, NHSNumber, age, postcode)) {
-                              this.removeCitizen(name, NHSNumber, age, postcode);
+                            let hash = this.removeUserHash.value;
+                            if (hash === "") {
+                              if (VerifyUserDetails(name, NHSNumber, age, postcode)) {
+                                this.removeCitizen(name, NHSNumber, age, postcode, hash);
+                              }
+                            } else {
+                              if (hash.length === 66) {
+                                // a valid hash must be 66 in length
+                                this.removeCitizen(name, NHSNumber, age, postcode, hash);
+                              }
                             }
                           }}
                         >
@@ -268,6 +281,23 @@ class App extends Component {
                               placeholder="NE1 4LP"
                               ref={(input) => {
                                 this.removeUserPostcode = input;
+                              }}
+                            />
+                          </Form.Group>
+
+                          <br />
+                          <h4>
+                            <b>OR:</b>
+                          </h4>
+                          <br />
+
+                          <Form.Group controlId="userHash">
+                            <Form.Label>HASH</Form.Label>
+                            <Form.Control
+                              type="text"
+                              placeholder="0x...."
+                              ref={(input) => {
+                                this.removeUserHash = input;
                               }}
                             />
                           </Form.Group>
@@ -390,45 +420,8 @@ function generateHash(name, NHSNumber, age, postcode) {
   let hash = createKeccakHash("keccak256")
     .update(NHSNumber + name + age + postcode)
     .digest("hex");
-  console.log(hash);
   createKeccakHash = null;
   return hash;
-}
-
-function verifyUserDetails(name, NHSNumber, age, postcode) {
-  try {
-    // check entered between 1-3 names (forename, middlename, surname)
-    var names = name.split(" ");
-    if (names.length > 3) {
-      throw new Error("Invalid name!");
-    }
-
-    // check entered valid NHS Number (3 digits, followed by 3 digits, followed by 4 digits)
-    var NHSRegex = /^[0-9]{3}-[0-9]{3}-[0-9]{4}$/;
-    var checkNHS = NHSNumber.match(NHSRegex);
-    if (checkNHS === null) {
-      throw new Error("Invalid NHSNumber!");
-    }
-    NHSNumber = checkNHS[0];
-
-    // check age is a valid age (1-120)
-    if (age < 1 || age > 120) {
-      throw new Error("Invalid Age!");
-    }
-
-    // check postcode is valid
-    var postcodeRegex = /([Gg][Ii][Rr] 0[Aa]{2})|((([A-Za-z][0-9]{1,2})|(([A-Za-z][A-Ha-hJ-Yj-y][0-9]{1,2})|(([A-Za-z][0-9][A-Za-z])|([A-Za-z][A-Ha-hJ-Yj-y][0-9][A-Za-z]?))))\s?[0-9][A-Za-z]{2})/;
-    var checkPostcode = postcode.match(postcodeRegex);
-    if (checkPostcode === null) {
-      throw new Error("Invalid postcode!");
-    }
-    postcode = checkPostcode[0];
-    return true;
-  } catch (e) {
-    console.log("error: ", e);
-    window.alert("Error invalid user details: " + e);
-    return false;
-  }
 }
 
 export default App;

@@ -1,7 +1,7 @@
 {
   "name": "covid-pass",
   "version": "0.1.0",
-  "description": "a blockchain based covid-19 immunity passport",
+  "description": "a blockchain based covid-19 vaccination certificate",
   "author": "Josh Dawson",
   "homepage": ".",
   "dependencies": {
