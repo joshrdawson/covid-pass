@@ -8,11 +8,11 @@ contract("Passport", function (accounts) {
   it("contract deployed with an administrator address", function () {
     return Passport.deployed()
       .then(function (instance) {
-        return instance.administrator();
+        return instance.administrator(); // get the admin address
       })
       .then(function (administratorAddress) {
-        var expectedAdminAddress = 0x769ae6c73ec565ac8590261cf9009c38a9756929;
-        assert.equal(expectedAdminAddress, administratorAddress);
+        var expectedAdminAddress = 0x769ae6c73ec565ac8590261cf9009c38a9756929; // the admin address of the test network (the address which deploys the contract)
+        assert.equal(expectedAdminAddress, administratorAddress); // check the real admin address is the same as the expected one
       });
   });
 
@@ -21,21 +21,19 @@ contract("Passport", function (accounts) {
     return Passport.deployed()
       .then(function (instance) {
         passportInstance = instance;
-        return instance.isVerified(address);
+        return instance.isVerified(address); // check if the address is currently verified
       })
       .then(function (verifiedStatus) {
-        assert.isFalse(verifiedStatus);
-        passportInstance
-          .addVerifiedUser(address)
-          .then(function () {
-            return passportInstance.addVerifiedUser(address);
-          })
-          .then(function () {
-            return passportInstance.isVerified(address);
-          })
-          .then(function (newVerifiedStauts) {
-            assert.isTrue(newVerifiedStauts);
-          });
+        assert.isFalse(verifiedStatus); // since the address hasnt been verified yet, it should not be verified
+      })
+      .then(function () {
+        return passportInstance.addVerifiedUser(address); // add the address to the verified list
+      })
+      .then(function () {
+        return passportInstance.isVerified(address); // check if it is now verified
+      })
+      .then(function (newVerifiedStatus) {
+        assert.isTrue(newVerifiedStatus);
       });
   });
 
@@ -47,27 +45,25 @@ contract("Passport", function (accounts) {
         return instance.isVerified(address);
       })
       .then(function (verifiedStatus) {
-        assert.isFalse(verifiedStatus);
-        passportInstance
-          .addVerifiedUser(address)
-          .then(function () {
-            return passportInstance.addVerifiedUser(address);
-          })
-          .then(function () {
-            return passportInstance.isVerified(address);
-          })
-          .then(function (newVerifiedStauts) {
-            assert.isTrue(newVerifiedStauts);
-          })
-          .then(function () {
-            return passportInstance.removeVerifiedUser(address);
-          })
-          .then(function () {
-            return passportInstance.isVerified(address);
-          })
-          .then(function (checkVerified) {
-            assert.isFalse(checkVerified);
-          });
+        assert.isFalse(verifiedStatus); // the address shouldnt be verified yet (it hasnt been verified)
+      })
+      .then(function () {
+        return passportInstance.addVerifiedUser(address); // add the address as verified
+      })
+      .then(function () {
+        return passportInstance.isVerified(address);
+      })
+      .then(function (newVerifiedStauts) {
+        assert.isTrue(newVerifiedStauts); // check if the address is now verified
+      })
+      .then(function () {
+        return passportInstance.removeVerifiedUser(address); // remove the address as a verified address
+      })
+      .then(function () {
+        return passportInstance.isVerified(address);
+      })
+      .then(function (checkVerified) {
+        assert.isFalse(checkVerified); // now check if it is no longer verified
       });
   });
 
@@ -81,10 +77,10 @@ contract("Passport", function (accounts) {
         return passportInstance.addCitizen(hash, postcode, age); // add the citizen
       })
       .then(function () {
-        return passportInstance.passports(hash);
+        return passportInstance.passports(hash); // get the data of the citizen from the ledger
       })
       .then(function (citizenData) {
-        assert.equal(postcode, citizenData.postcode);
+        assert.equal(postcode, citizenData.postcode); // check the citizen data is correct
         assert.equal(age, citizenData.age);
       });
   });
@@ -92,24 +88,24 @@ contract("Passport", function (accounts) {
   it("removed citizen successfully", function () {
     let postcode = "NE3 1LP";
     let age = 50;
-    let hash = "0xee1f19580cd612c0b9722ead7f7adc0534e982613c7a78816c3aa451997c3983";
+    let hash = "0xee1f19580cd612c0b9722ead7f7adc0534e982613c7a78816c3aa451997c3983"; // precalculated hash
     return Passport.deployed()
       .then(function (instance) {
         passportInstance = instance;
-        return instance.addCitizen(hash, postcode, age); // add an imaginary user to the ledger
+        return instance.addCitizen(hash, postcode, age); // add an imaginary citizen to the ledger
       })
       .then(function () {
         return passportInstance.passports(hash);
       })
       .then(function (citizenData) {
-        assert.equal(postcode, citizenData.postcode);
+        assert.equal(postcode, citizenData.postcode); // check the citizen was succsesfully added
         assert.equal(age, citizenData.age);
       })
       .then(function () {
-        return passportInstance.removeCitizen(hash);
+        return passportInstance.removeCitizen(hash); // remove citizen
       })
       .then(function (checkRemovedData) {
-        assert.equal(undefined, checkRemovedData.postcode);
+        assert.equal(undefined, checkRemovedData.postcode); // check citizen data now is undefinied rather than holding the appropriate values
         assert.equal(undefined, checkRemovedData.age);
       });
   });
