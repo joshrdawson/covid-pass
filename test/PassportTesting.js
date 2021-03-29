@@ -21,7 +21,7 @@ contract("Passport", function (accounts) {
     return Passport.deployed()
       .then(function (instance) {
         passportInstance = instance;
-        return instance.isVerified(address); // check if the address is currently verified
+        return passportInstance.isVerified(address); // check if the address is currently verified
       })
       .then(function (verifiedStatus) {
         assert.isFalse(verifiedStatus); // since the address hasnt been verified yet, it should not be verified
@@ -42,7 +42,7 @@ contract("Passport", function (accounts) {
     return Passport.deployed()
       .then(function (instance) {
         passportInstance = instance;
-        return instance.isVerified(address);
+        return passportInstance.isVerified(address);
       })
       .then(function (verifiedStatus) {
         assert.isFalse(verifiedStatus); // the address shouldnt be verified yet (it hasnt been verified)
@@ -92,7 +92,7 @@ contract("Passport", function (accounts) {
     return Passport.deployed()
       .then(function (instance) {
         passportInstance = instance;
-        return instance.addCitizen(hash, postcode, age); // add an imaginary citizen to the ledger
+        return passportInstance.addCitizen(hash, postcode, age); // add an imaginary citizen to the ledger
       })
       .then(function () {
         return passportInstance.passports(hash);
@@ -107,6 +107,21 @@ contract("Passport", function (accounts) {
       .then(function (checkRemovedData) {
         assert.equal(undefined, checkRemovedData.postcode); // check citizen data now is undefinied rather than holding the appropriate values
         assert.equal(undefined, checkRemovedData.age);
+      });
+  });
+
+  it("checked vaccination status successfully", function () {
+    let hash = "0x391ac66f4928e250a510eef8deacb77087475a001c0ce1238483b87615a4ed23";
+    return Passport.deployed()
+      .then(function (instance) {
+        passportInstance = instance;
+        return passportInstance.addCitizen(hash, "NE4 1LP", 35); // add a random user to the ledger (when adding a user their status is set to true)
+      })
+      .then(function () {
+        return passportInstance.isVaccinated(hash);
+      })
+      .then(function (vaccinationStatus) {
+        assert.isTrue(vaccinationStatus); // check their vaccination status is true
       });
   });
 });
