@@ -70,4 +70,22 @@ contract("Passport", function (accounts) {
           });
       });
   });
+
+  it("added citizen successfully", function () {
+    let postcode = "NE1 4LP";
+    let age = 21;
+    let hash = "0x500bba56604d0dc300a086e4af375a88def60677f6c026e6ce995e528086177d";
+    return Passport.deployed()
+      .then(function (instance) {
+        passportInstance = instance;
+        return instance.addCitizen(hash, postcode, age);
+      })
+      .then(function (citizenData) {
+        return passportInstance.passports(hash);
+      })
+      .then(function (checkData) {
+        assert.equal(postcode, checkData.postcode);
+        assert.equal(age, checkData.age);
+      });
+  });
 });
